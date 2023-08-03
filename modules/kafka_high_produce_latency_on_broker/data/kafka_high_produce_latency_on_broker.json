@@ -1,0 +1,186 @@
+{
+  "name": "kafka_high_produce_latency_on_broker",
+  "description": "This incident type typically involves a high produce latency on a broker in a Kafka environment. This can result in various potential impacts, such as client timeouts, delays in processing workload, or a lack of capacity leading to performance issues. Recommended actions typically include investigating the state of the broker, rebalancing topics, expanding capacity, or restarting/replacing the broker. Monitoring tools may trigger alerts to notify engineers of this potential issue.",
+  "params": [
+    {
+      "name": "ZOOKEEPER_URL",
+      "value": ""
+    },
+    {
+      "name": "TOPIC_NAME",
+      "value": ""
+    },
+    {
+      "name": "BROKER_PORT",
+      "value": ""
+    },
+    {
+      "name": "NEW_NUMBER_OF_ACKNOWLEDGMENTS",
+      "value": ""
+    },
+    {
+      "name": "BROKER_IP",
+      "value": ""
+    },
+    {
+      "name": "NEW_BATCH_SIZE",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_KAFKA_CONFIG_FILE",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Kafka high produce latency on broker.\nThis incident type typically involves a high produce latency on a broker in a Kafka environment. This can result in various potential impacts, such as client timeouts, delays in processing workload, or a lack of capacity leading to performance issues. Recommended actions typically include investigating the state of the broker, rebalancing topics, expanding capacity, or restarting/replacing the broker. Monitoring tools may trigger alerts to notify engineers of this potential issue."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if Kafka is running on the broker"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status kafka`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any issues with the Kafka process"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `journalctl -u kafka  --since \"2 hours ago\"`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the disk usage on the broker"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `df -h`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the network connections on the broker"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `netstat -an | grep ${BROKER_IP}`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the number of connections to the broker"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `netstat -an | grep ${BROKER_IP} | wc -l`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the number of messages in the topic"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-run-class kafka.tools.GetOffsetShell --broker-list ${BROKER_IP}:${BROKER_PORT} --topic ${TOPIC_NAME}`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the number of partitions in the topic"
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-topics --zookeeper ${ZOOKEEPER_IP}:${ZOOKEEPER_PORT} --describe --topic ${TOPIC_NAME}`"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the resource utilization of the broker"
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `top`"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Kafka log file for errors"
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `tail -f /var/log/kafka/kafka.log`"
+    },
+    {
+      "name": "cell_20",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## High network latency can cause produce latency on Kafka brokers."
+    },
+    {
+      "name": "cell_21",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_check_kafka_latency()"
+    },
+    {
+      "name": "cell_22",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Tune Kafka configuration parameters, such as the producer batch size and the number of acknowledgments required, to optimize performance."
+    },
+    {
+      "name": "cell_23",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_kafka_config_update($NEW_NUMBER_OF_ACKNOWLEDGMENTS, $NEW_BATCH_SIZE, $PATH_TO_KAFKA_CONFIG_FILE)"
+    }
+  ]
+}
